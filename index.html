@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>MapleLand Boss</title>
+  <style>
+    body {
+      background-image: url('Temple.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+      transition: background 0.5s ease;
+    }
+
+    body.no-bg {
+      background-image: none;
+      background-color: #000;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: -1;
+    }
+
+    .title-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .title-container img {
+      height: 60px;
+    }
+
+    .title-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: white;
+    }
+
+    #container {
+      margin-top: 20px;
+    }
+
+    h3 {
+      margin-top: 15px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+    }
+
+    h3 img {
+      width: 31px;
+      height: 31px;
+      margin-right: 8px;
+    }
+
+    button {
+      margin: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .copied-msg {
+      font-size: 12px;
+      color: #6cf;
+    }
+
+    .sub-label {
+      font-size: 14px;
+      color: #fff;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .special-buttons-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .special-button-wrapper {
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+      gap: 4px;
+    }
+
+    .special-button-wrapper img {
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+    }
+
+    .skill-icon.darkened {
+      filter: brightness(50%);
+    }
+
+    .timer-text {
+      font-size: 12px;
+      color: #fff;
+    }
+
+    #dropZone {
+      border: 2px dashed white;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    #dropZone.hidden {
+      display: none;
+    }
+
+    #bgToggle {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="title-container">
+    <img src="MapleLand.png" alt="left" />
+    <div class="title-text">MapleLand Boss <span id="copyStatus" class="copied-msg"></span></div>
+    <img src="Boss.png" alt="right" />
+  </div>
+
+  <button id="bgToggle">배경 OFF</button>
+  <div id="dropZone">여기로 .txt 파일을 옮겨주세요</div>
+  <input type="file" id="fileInput" style="display: none;" />
+  <div id="container"></div>
+
+  <script>
+    const jobIcons = {
+      "JOB1": "JOB1.png",
+      "JOB2": "JOB2.png",
+      "JOB3": "JOB3.png",
+      "JOB4": "JOB4.png",
+      "JOB5": "JOB5.png"
+    };
+
+    const jobNames = {
+      "JOB1": "전사",
+      "JOB2": "마법사",
+      "JOB2_1": "비숍",
+      "JOB3": "궁수",
+      "JOB4": "도적",
+      "JOB4_1": "섀도어",
+      "JOB5": "해적",
+      "JOB5_1": "바이퍼"
+    };
+
+    const subClassIcons = {
+      "비숍": "Skill_1.png",
+      "섀도어": "Skill_2.png",
+      "바이퍼": "Skill_3.png"
+    };
+
+    const subClassTimers = {
+      "비숍": 1800,
+      "섀도어": 600,
+      "바이퍼": 1200
+    };
+
+    const jobCodes = Object.keys(jobNames);
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const copyStatus = document.getElementById('copyStatus');
+    const container = document.getElementById('container');
+    const bgToggle = document.getElementById('bgToggle');
+    let bgOn = true;
+
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const lines = e.target.result.split('\n').map(line => line.trim());
+        container.innerHTML = '';
+        copyStatus.textContent = '';
+        dropZone.classList.add('hidden');
+        let currentClass = null;
+
+        lines.forEach(line => {
+          if (!line) return;
+
+          if (jobCodes.includes(line)) {
+            const jobLabel = jobNames[line];
+            const baseJob = line.substring(0, 5);
+            const iconFile = jobIcons[baseJob];
+
+            if (line.includes("_")) {
+              const labelText = jobLabel;
+
+              if (!["비숍", "섀도어", "바이퍼"].includes(labelText)) {
+                const label = document.createElement('div');
+                label.className = 'sub-label';
+                label.textContent = labelText;
+                container.appendChild(label);
+              }
+
+              currentClass = document.createElement('div');
+              currentClass.className = 'special-buttons-row';
+              currentClass.dataset.label = labelText;
+              container.appendChild(currentClass);
+            } else {
+              currentClass = document.createElement('div');
+              const title = document.createElement('h3');
+
+              if (iconFile) {
+                const icon = document.createElement('img');
+                icon.src = iconFile;
+                title.appendChild(icon);
+              }
+
+              const span = document.createElement('span');
+              span.textContent = jobLabel;
+              title.appendChild(span);
+
+              currentClass.appendChild(title);
+              container.appendChild(currentClass);
+            }
+          } else {
+            const isSubClass = currentClass?.className === 'special-buttons-row';
+
+            if (isSubClass) {
+              const wrapper = document.createElement('div');
+              wrapper.className = 'special-button-wrapper';
+
+              const button = document.createElement('button');
+              button.textContent = line;
+              button.addEventListener('click', () => {
+                const copyText = `/파티초대 ${line}`;
+                navigator.clipboard.writeText(copyText).then(() => {
+                  copyStatus.textContent = `(${copyText}) 복사됨`;
+                  setTimeout(() => {
+                    copyStatus.textContent = '';
+                  }, 500);
+                });
+              });
+
+              const icon = document.createElement('img');
+              const label = currentClass?.dataset?.label;
+              icon.src = subClassIcons[label] || "timer_icon.png";
+              icon.classList.add('skill-icon');
+
+              const timerText = document.createElement('span');
+              timerText.className = 'timer-text';
+
+              let timerInterval = null;
+
+              icon.addEventListener('click', () => {
+                icon.classList.toggle('darkened'); 
+
+                if (timerInterval) {
+                  clearInterval(timerInterval);
+                  timerInterval = null;
+                  timerText.textContent = '';
+                  return;
+                }
+
+                let remaining = subClassTimers[label] || 1800;
+
+                const updateTimer = () => {
+                  const min = String(Math.floor(remaining / 60)).padStart(2, '0');
+                  const sec = String(remaining % 60).padStart(2, '0');
+                  timerText.textContent = `${min}:${sec}`;
+                  if (remaining > 0) remaining--;
+                  else clearInterval(timerInterval);
+                };
+
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+              });
+
+              wrapper.appendChild(button);
+              wrapper.appendChild(icon);
+              wrapper.appendChild(timerText);
+              currentClass.appendChild(wrapper);
+            } else {
+              const button = document.createElement('button');
+              button.textContent = line;
+              button.addEventListener('click', () => {
+                const copyText = `/파티초대 ${line}`;
+                navigator.clipboard.writeText(copyText).then(() => {
+                  copyStatus.textContent = `(${copyText}) 복사됨`;
+                  setTimeout(() => {
+                    copyStatus.textContent = '';
+                  }, 500);
+                });
+              });
+              currentClass?.appendChild(button);
+            }
+          }
+        });
+      };
+      reader.readAsText(file);
+    }
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#6cf';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'white';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'white';
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.txt')) {
+        handleFile(file);
+      } else {
+        alert('.txt 파일만 지원됩니다.');
+      }
+    });
+
+    bgToggle.addEventListener('click', () => {
+      bgOn = !bgOn;
+      document.body.classList.toggle('no-bg', !bgOn);
+      bgToggle.textContent = bgOn ? '배경 OFF' : '배경 ON';
+    });
+  </script>
+</body>
+</html>
